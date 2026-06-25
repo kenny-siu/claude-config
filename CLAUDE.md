@@ -19,22 +19,13 @@ These are the model-invocable skills in `~/.claude/skills/` — available in eve
 | `review-changes` | Reviewing uncommitted edits or branch commits — runs code, tech-debt, and security reviewers in parallel. MUST. |
 | `post-pr-review` | Posting review findings on a GitHub PR as a single pending review for the user to submit. MUST. |
 
-## Available Subagents (use `Agent` tool)
-
-| Subagent | When to Use |
-|----------|-------------|
-| `Explore` | Broad codebase research that'll take more than 3 queries — protects main context. |
-| `Plan` | Designing the implementation strategy for a non-trivial task. |
-| `claude-code-guide` | Questions about Claude Code, the Agent SDK, or the Anthropic API. |
-
 ## Process
 
 For every user request:
 
 1. Check: does any **skill** apply? → invoke with `Skill` tool.
-2. Check: does any **subagent** apply? → invoke with `Agent` tool (`subagent_type="Explore"`, etc.).
-3. Announce briefly: "Using `[skill/subagent]` to [purpose]."
-4. Follow the skill exactly — if it has a checklist, create todos.
+2. Announce briefly: "Using `[skill]` to [purpose]."
+3. Follow the skill exactly — if it has a checklist, create todos.
 
 ## Red Flags (You're Rationalizing)
 
@@ -45,7 +36,6 @@ For every user request:
 | "I'll just write the test quickly" | `test-writing` runs before any test work. No exceptions. |
 | "It's only a one-line `//` to explain this bit" | `code-comments` runs before ANY comment — including TODOs and `it(...)` strings. No exceptions. |
 | "The user just said 'make this clearer'" | That triggers `reword-plain-english`. Don't reword from memory. |
-| "I'll grep around to find it" | For >3 queries, spawn `Explore` instead of searching inline. |
 | "Skill content is the same as last time" | Skills evolve. Read the current version. |
 
 ## Skill Priority
