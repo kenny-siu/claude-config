@@ -100,7 +100,11 @@ Only check when changes involve significant business actions (entity creation/de
 
 Before listing problems, explain what changed. This helps reviewers understand the code before evaluating it.
 
-**File ordering:** Start with foundational changes (models, types, utilities) and build up to higher-level changes (components, pages, endpoints). Each file should introduce only one new concept, building on what came before.
+**File ordering:** Start at the **impact sites** — the call sites where the changed thing is used — so the reader sees the new way of doing things in context. Then work inward to the changed thing's implementation and its helpers. Put **tests last**.
+
+The shape: `call sites → contexts/types they touch → the change itself → its helpers → deletions → tests`. Each step should answer a question raised by the previous step.
+
+Do NOT default to a foundations-up order (types → helpers → change → call sites → tests) unless the user asks for it.
 
 **Short filenames:** Use only the base filename (e.g., `update_pathway.py` not the full path). Add parent directory segments only when two or more changed files share the same name — and only enough to disambiguate (e.g., `pathway/models.py` vs `course/models.py`).
 

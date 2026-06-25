@@ -1,6 +1,7 @@
 ---
 name: fix-ci
 description: Fetch failed CI checks for a pull request, retrieve the failure logs, diagnose each failure, and fix it after user confirmation. Use when a PR has failing checks, CI is red, tests are failing, or the user wants to diagnose and fix CI failures.
+disable-model-invocation: true
 args:
   - name: ARG
     description: "Pull request identifier: a PR number (e.g. 123), a full GitHub PR URL, or an '<owner>/<repo>#<number>' reference."
@@ -44,9 +45,11 @@ For each failed check:
 3. **Propose a fix.** If an auto-fix command exists (linter `--fix`, snapshot `--update`), mention it. If no code change helps (flaky test, infra issue), say so.
 4. **Wait for user approval** before applying. Skip if declined.
 
-### 5. Summary
+### 5. Verify, then summarise
 
-Report how many checks were fixed vs skipped. Remind the user to run the project's dev loop (type-check, lint, test) before pushing — infer the right commands from project config.
+After applying fixes, run the relevant tests yourself — don't just tell the user to. Infer the right commands from project config and scope them to what you touched (the affected test file, type-check, lint). Report the actual results.
+
+Then report how many checks were fixed vs skipped. Don't re-trigger CI or push — leave that to the user.
 
 ## Rules
 

@@ -1,6 +1,7 @@
 ---
 name: fix-review
-description: Fetch unresolved PR review comments for a given pull request, explain each issue and proposed fix to the user, and apply fixes after confirmation. Use when the user wants to address PR feedback, resolve reviewer comments, work through code review, or apply GitHub feedback from a pull request.
+description: Fix review.
+disable-model-invocation: true
 args:
   - name: ARG
     description: "Pull request identifier: a PR number (e.g. 123), a full GitHub PR URL, or an '<owner>/<repo>#<number>' reference."
@@ -34,24 +35,13 @@ If neither is available, stop and inform the user.
 - If no `{{ARG}}` is provided, fetch open PRs targeting the current branch and ask the user to choose one if there are multiple.
 - If no open PR is found, stop and inform the user.
 
-### 2. Fetch PR review comments
+### 2. Fetch PR feedback
 
-Using the chosen method:
+Fetch **both** sources — inline review threads and top-level PR comments. Bots like Cursor Bugbot post their findings as top-level PR comments, which never appear in `reviewThreads`. Skipping the issue-comments endpoint silently drops them.
 
 #### gh CLI
 
-```bash
-# Fetch all review comments (including resolved status)
-gh api repos/{owner}/{repo}/pulls/{pr_number}/comments --paginate
-
-# Fetch review threads to determine resolved status
-gh api repos/{owner}/{repo}/pulls/{pr_number}/reviews --paginate
-
-# Fetch the PR diff for context
-gh pr diff {pr_number}
-```
-
-Use the GraphQL API to get review thread resolution status:
+Use the GraphQL API for inline review threads (gives `isResolved` / `isOutdated`):
 
 ```bash
 gh api graphql -f query='
@@ -83,19 +73,32 @@ gh api graphql -f query='
 '
 ```
 
+Use the issues endpoint for top-level PR comments (bugbot, kickoff notes, human top-level review summaries):
+
+```bash
+gh api repos/{owner}/{repo}/issues/{pr_number}/comments --paginate
+```
+
+Fetch the PR diff for context:
+
+```bash
+gh pr diff {pr_number}
+```
+
 #### GitHub MCP (fallback)
 
-Use available GitHub MCP tools to fetch pull request reviews and comments.
+Use available GitHub MCP tools to fetch both pull request review threads and issue comments.
 
-### 3. Filter to unresolved comments
+### 3. Filter to actionable feedback
 
-Keep only review threads where `isResolved` is `false`. Mention any threads where `isOutdated` is `true` in case they are still relevant, but they may be skipped.
+- **Inline review threads**: keep only threads where `isResolved` is `false`. Mention `isOutdated: true` threads in case they're still relevant, but they may be skipped.
+- **Top-level PR comments**: drop bot/system noise (linear linkback, Datadog status, CI badges) and the user's own meta-comments ("bugbot run", re-open notes). Keep substantive review content from humans and review bots (e.g. Cursor Bugbot). For each finding, sanity-check whether it still applies to the **current** branch state — earlier reviews may target a commit that has since been refactored away. Treat already-fixed findings as resolved and say so.
 
-If there are **no unresolved comments**, inform the user that all review threads are resolved and stop.
+If both sources are empty after filtering, tell the user there's nothing to fix and stop.
 
-### 4. Process each unresolved comment
+### 4. Process each piece of feedback
 
-For **each** unresolved review thread, in order:
+For **each** actionable item (inline thread or top-level comment), in order:
 
 1. **Read the relevant file and code** referenced by the comment (`path` and `line`). Use the file as it exists on the current branch to understand context.
 2. **Explain the issue** to the user:
@@ -113,14 +116,19 @@ For **each** unresolved review thread, in order:
    - Make the code change.
    - Briefly confirm what was changed.
 
-### 5. Summary
+### 5. Verify and summarise
 
-After processing all unresolved comments, provide a summary:
+After processing all unresolved comments, **run the development loop yourself** for the area touched by the fixes — typecheck, lint, and the closest existing tests. Don't punt this to the user.
+
+- Pick the right invocations for the repo (e.g. `npx tsc --noEmit`, the test file co-located with the change, or the project's `task test` equivalent).
+- Surface results in the summary; if anything fails, fix or flag it before reporting done.
+
+Then provide a summary:
 
 - How many comments were addressed with code changes.
 - How many required no changes.
 - How many were skipped by the user.
-- Remind the user to run the development loop (type check, lint, format, test) before pushing.
+- Verification results (typecheck/lint/tests run, with pass/fail counts).
 
 ## Important guidelines
 

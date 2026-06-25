@@ -1,7 +1,6 @@
 ---
 name: reword-plain-english
-description: Reword Using Plain English Principles
-disable-model-invocation: true
+description: "You MUST invoke this skill whenever the user asks you to explain, rewrite, reword, simplify, or clarify anything in plain English, simple English, simpler language, or clearer language. Do NOT attempt to reword text using your own judgment first — activate this skill to apply the plain English principles consistently. Triggers on phrases like 'in plain english', 'in simple english', 'explain simply', 'reword this', 'make this clearer', or any request to simplify prose."
 ---
 
 # Reword Using Plain English Principles
@@ -10,8 +9,7 @@ Reword the text the user provides using the plain English principles below. Keep
 
 ## Output Format
 
-1. Reworded text
-2. Optional short notes on the most important changes
+Output only the reworded text. Do not summarise, list, or explain the changes you made. Do not add a preamble or closing commentary.
 
 ---
 
